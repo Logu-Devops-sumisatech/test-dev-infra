@@ -13,7 +13,7 @@ provider "aws" {
   region = "us-east-1"
 }
 
-# VPC
+//VPC
 resource "aws_vpc" "dev_vpc" {
   cidr_block = "10.0.0.0/16"
   tags = {
@@ -21,7 +21,7 @@ resource "aws_vpc" "dev_vpc" {
   }
 }
 
-# Public Subnet
+//Public Subnet
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.dev_vpc.id
   cidr_block              = "10.0.0.0/24"
@@ -41,6 +41,59 @@ resource "aws_subnet" "private_subnet" {
   tags = {
     Name = "Private-Subnet"
   }
+}
+//internet gateway
+resource "aws_internet_gateway" "dev_igw" {
+  vpc_id = aws_vpc.dev_vpc.id
+  tags = {
+    name = "dev_igw"
+  }
+  
+}
+//public route table 
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.dev_vpc.id
+  route = {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.dev_igw.id
+  }
+
+  tags = {
+    name = "public_rt"
+  }
+}
+resource "aws_route_table_association" "public_assoc" {
+  subnet_id = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public_rt.id
+}
+//nat agteway
+
+resource "aws_eip" "nat_eip" {
+  domain = "vpc"  
+}
+resource "aws_nat_gateway" "dev_nat" {
+  allocation_id = aws_eip.nat_eip.id
+  subnet_id = aws_subnet.public_subnet.id
+  tags = {
+    name = "dev-nat"
+  }
+  depends_on = [ aws_internet_gateway.dev_igw ]
+}
+//private route table 
+resource "aws_route_table" "private_rt" {
+  vpc_id = aws_vpc.dev_vpc.id
+  route = {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.dev_igw.id
+  }
+
+  tags = {
+    name = "private_rt"
+  }
+}
+resource "aws_route_table_association" "private_assoc" {
+  subnet_id = aws_subnet.priavte_subnet.id
+  route_table_id = aws_route_table.private_rt.id
 }
 
 # Security Group for Public (Jenkins + Proxy)
