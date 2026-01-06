@@ -128,10 +128,13 @@ resource "aws_instance" "jenkins_server" {
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.public_sg.id]
 
+  user_data = file("${path.module}/jenkins.sh")
+
   tags = {
     Name = "Jenkins-Server"
   }
 }
+
 
 # Proxy Server (Public)
 resource "aws_instance" "proxy_server" {
@@ -140,10 +143,13 @@ resource "aws_instance" "proxy_server" {
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.public_sg.id]
 
+  user_data = file("${path.module}/nginx.sh")
+
   tags = {
     Name = "Proxy-Server"
   }
 }
+
 
 # Dev Server (Private)
 resource "aws_instance" "dev_server" {
@@ -152,7 +158,10 @@ resource "aws_instance" "dev_server" {
   subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.private_sg.id]
 
+  user_data = file("${path.module}/docker.sh")
+
   tags = {
     Name = "Dev-Server"
   }
 }
+
