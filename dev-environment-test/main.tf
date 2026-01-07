@@ -12,8 +12,8 @@ terraform {
 provider "aws" {
   region = "us-east-1"
 }
-
 # VPC
+
 resource "aws_vpc" "dev_vpc" {
   cidr_block = "10.0.0.0/16"
 
@@ -22,7 +22,9 @@ resource "aws_vpc" "dev_vpc" {
   }
 }
 
+
 # Internet Gateway
+
 resource "aws_internet_gateway" "dev_igw" {
   vpc_id = aws_vpc.dev_vpc.id
 
@@ -31,7 +33,9 @@ resource "aws_internet_gateway" "dev_igw" {
   }
 }
 
+
 # Public Subnet
+
 resource "aws_subnet" "public_subnet" {
   vpc_id                  = aws_vpc.dev_vpc.id
   cidr_block              = "10.0.0.0/24"
@@ -43,7 +47,9 @@ resource "aws_subnet" "public_subnet" {
   }
 }
 
-# Private Subnet (No Internet access)
+
+# Private Subnet
+
 resource "aws_subnet" "private_subnet" {
   vpc_id            = aws_vpc.dev_vpc.id
   cidr_block        = "10.0.1.0/24"
@@ -54,7 +60,9 @@ resource "aws_subnet" "private_subnet" {
   }
 }
 
+
 # Public Route Table
+
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.dev_vpc.id
 
@@ -68,13 +76,14 @@ resource "aws_route_table" "public_rt" {
   }
 }
 
-# Public Route Table Association
 resource "aws_route_table_association" "public_assoc" {
   subnet_id      = aws_subnet.public_subnet.id
   route_table_id = aws_route_table.public_rt.id
 }
 
+
 # Security Group - Public
+
 resource "aws_security_group" "public_sg" {
   name   = "public-sg"
   vpc_id = aws_vpc.dev_vpc.id
@@ -82,6 +91,13 @@ resource "aws_security_group" "public_sg" {
   ingress {
     from_port   = 22
     to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -101,7 +117,9 @@ resource "aws_security_group" "public_sg" {
   }
 }
 
+
 # Security Group - Private
+
 resource "aws_security_group" "private_sg" {
   name   = "private-sg"
   vpc_id = aws_vpc.dev_vpc.id
@@ -121,9 +139,11 @@ resource "aws_security_group" "private_sg" {
   }
 }
 
-# Jenkins Server (Public)
+
+# Jenkins Server
+
 resource "aws_instance" "jenkins_server" {
-  ami                    = "ami-0c02fb55956c7d316"
+  ami                    = "ami-09d56f8956ab235b3" # Ubuntu 20.04 (us-east-1)
   instance_type          = "t2.medium"
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.public_sg.id]
@@ -136,9 +156,10 @@ resource "aws_instance" "jenkins_server" {
 }
 
 
-# Proxy Server (Public)
+# Proxy Server
+
 resource "aws_instance" "proxy_server" {
-  ami                    = "ami-0c02fb55956c7d316"
+  ami                    = "ami-09d56f8956ab235b3"
   instance_type          = "t2.micro"
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.public_sg.id]
@@ -151,9 +172,10 @@ resource "aws_instance" "proxy_server" {
 }
 
 
-# Dev Server (Private)
+# Dev Server
+
 resource "aws_instance" "dev_server" {
-  ami                    = "ami-0c02fb55956c7d316"
+  ami                    = "ami-09d56f8956ab235b3"
   instance_type          = "t2.medium"
   subnet_id              = aws_subnet.private_subnet.id
   vpc_security_group_ids = [aws_security_group.private_sg.id]
@@ -164,4 +186,3 @@ resource "aws_instance" "dev_server" {
     Name = "Dev-Server"
   }
 }
-
